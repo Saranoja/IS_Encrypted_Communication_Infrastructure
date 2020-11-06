@@ -18,7 +18,6 @@ def get_key_and_decrypt(con):
     print(f'Key from A: {encrypted_key}')
     key = commons.AES_decrypt(encrypted_key, commons.K_prime)
     print(f'Decrypted key: {key}')
-    return key
 
 
 def send_start_signal(con):
@@ -47,7 +46,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         mode_of_operation = get_mode_of_operation(conn)
 
-        decrypted_key = get_key_and_decrypt(conn)
+        get_key_and_decrypt(conn)
 
         send_start_signal(conn)
 
