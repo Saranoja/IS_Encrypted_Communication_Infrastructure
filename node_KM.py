@@ -1,6 +1,7 @@
 import os
 import socket
 import commons
+from AES_pack import *
 
 K = os.urandom(16)
 
@@ -11,4 +12,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         data = conn.recv(1024)
         print(f'Requested mode of operation: {data.decode("utf-8")}')
-        conn.sendall(bytes(commons.AES_encrypt(K, commons.K_prime)))
+        conn.sendall(bytes(AES_encrypt(K, commons.K_prime)))

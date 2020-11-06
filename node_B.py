@@ -2,6 +2,7 @@ import socket
 import commons
 from CBC_mode import *
 from OFB_mode import *
+from AES_pack import *
 
 key, encrypted_key = b'', b''
 
@@ -16,7 +17,7 @@ def get_key_and_decrypt(con):
     global key, encrypted_key
     encrypted_key = con.recv(16)
     print(f'Key from A: {encrypted_key}')
-    key = commons.AES_decrypt(encrypted_key, commons.K_prime)
+    key = AES_decrypt(encrypted_key, commons.K_prime)
     print(f'Decrypted key: {key}')
 
 

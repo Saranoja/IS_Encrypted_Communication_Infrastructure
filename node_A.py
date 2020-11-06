@@ -3,6 +3,7 @@ import commons
 import random
 from CBC_mode import *
 from OFB_mode import *
+from AES_pack import *
 
 available_modes = [commons.OFB, commons.CBC]
 MODE_OF_OPERATION = random.choice(available_modes)
@@ -18,7 +19,7 @@ def get_key_and_decrypt(sock):
     global key, encrypted_key
     encrypted_key = sock.recv(16)
     print(f'Key received from node_KM: {encrypted_key}')
-    key = commons.AES_decrypt(encrypted_key, commons.K_prime)
+    key = AES_decrypt(encrypted_key, commons.K_prime)
     print(f'Decrypted key: {key}')
 
 
