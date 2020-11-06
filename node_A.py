@@ -1,36 +1,90 @@
 import socket
 import commons
+import random
+from CBC_mode import *
+from OFB_mode import *
 
-OPERATING_MODE = commons.OFB
+available_modes = [commons.OFB, commons.CBC]
+MODE_OF_OPERATION = random.choice(available_modes)
+key, encrypted_key = b'', b''
 
 
-def build_network(B_port, KM_port):
+def send_mode_of_operation_to(sock):
+    sock.sendall(bytes(MODE_OF_OPERATION, "utf-8"))
+    sock.sendall(encrypted_key)
+
+
+def get_key_and_decrypt(sock):
+    global key, encrypted_key
+    encrypted_key = sock.recv(16)
+    print(f'Key received from node_KM: {encrypted_key}')
+    key = commons.AES_decrypt(encrypted_key, commons.K_prime)
+    print(f'Decrypted key: {key}')
+
+
+def get_start_signal(sock):
+    data = sock.recv(5)
+    print(f'Signal received from B: {data.decode("utf-8")}')
+
+
+def retrieve_text_from_file(f):
+    try:
+        file_text = f.read()
+        return file_text
+    except PermissionError:
+        print("No permission to read from the file")
+
+
+def send_file_size_to(sock, text):
+    file_size = len(text)
+    sock.sendall(bytes(str(file_size), 'utf8'))
+
+
+def encrypt_message_on_chosen_mode(message):
+    if MODE_OF_OPERATION == commons.CBC:
+        cbc = CBC_mode(commons.initialization_vector, key)
+        encrypted_message = cbc.encrypt(message)
+    else:
+        ofb = OFB_mode(commons.initialization_vector, key)
+        encrypted_message = ofb.encrypt(message)
+    return encrypted_message
+
+
+def send_encrypted_message(sock, message):
+    print(f'Sending encrypted message: {message}')
+    sock.sendall(message)
+
+
+def connect_to_KM(KM_port):
+    global key, encrypted_key
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as kms:
+        kms.connect((commons.HOST, KM_port))
+
+        send_mode_of_operation_to(kms)
+
+        get_key_and_decrypt(kms)
+
+
+def connect_to_B(B_port):
+    global key, encrypted_key
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as kms:
-            kms.connect((commons.HOST, KM_port))
-            kms.sendall(bytes(OPERATING_MODE, "utf-8"))
+        s.connect((commons.HOST, B_port))
 
-            encrypted_key = kms.recv(128)
-            print(f'Key received from node_KM: {encrypted_key}')
-            key = commons.AES_decrypt(encrypted_key, commons.K_prime)
-            print(f'Decrypted key: {key}')
-            kms.close()
+        send_mode_of_operation_to(s)
+        get_start_signal(s)
 
-            s.connect((commons.HOST, B_port))
-            s.sendall(bytes(OPERATING_MODE, "utf-8"))
-            s.sendall(encrypted_key)
+        try:
 
-            data = s.recv(1024)
-            print(f'Message from B: {data.decode("utf-8")}')
-            file_size = len(commons.test_message)
-            s.sendall(bytes(str(file_size), 'utf8'))
-            if OPERATING_MODE == commons.CBC:
-                encrypted_message = commons.CBC_encrypt(commons.test_message, commons.initialization_vector, key)
-            else:
-                encrypted_message = commons.OFB_encrypt(commons.test_message, commons.initialization_vector, key)
-            print(f'Sending encrypted message to B: {encrypted_message}')
-            s.sendall(encrypted_message)
+            with open("file.txt", "rb") as f:
+                file_text = retrieve_text_from_file(f)
+                send_file_size_to(s, file_text)
+                encrypted_message = encrypt_message_on_chosen_mode(file_text)
+                send_encrypted_message(s, encrypted_message)
+
+        except FileNotFoundError:
+            print("Did not find the requested file")
 
 
 if __name__ == "__main__":
-    build_network(commons.A_B_PORT, commons.A_KM_PORT)
+    connect_to_KM(commons.A_KM_PORT)
+    connect_to_B(commons.A_B_PORT)
