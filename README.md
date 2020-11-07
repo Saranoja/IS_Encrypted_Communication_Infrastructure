@@ -1,4 +1,4 @@
-# IS_Encrypted_Communication_Infrastructure
+# IS Encrypted Communication Infrastructure
 Information Security Lab - Communication infrastructure using the AES cryptosystem for traffic encryption between two nodes.
 
 Requirements:
