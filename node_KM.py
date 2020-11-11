@@ -10,6 +10,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.listen()
     conn, _ = s.accept()
     with conn:
-        data = conn.recv(1024)
+        data = conn.recv(3)
         print(f'Requested mode of operation: {data.decode("utf-8")}')
         conn.sendall(bytes(AES_encrypt(K, commons.K_prime)))
